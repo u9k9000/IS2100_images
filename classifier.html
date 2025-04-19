@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ml5.js Classifier Demo</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+        <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
+        <style>
+            body {
+                font-family: 'Inter', sans-serif;
+                margin: 2rem;
+                text-align: center;
+            }
+            .classifier-grid {
+                display: flex;
+                gap: 2rem;
+                margin-top: 2rem;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .classifier-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                max-width: 200px;
+            }
+            .classifier-item img {
+                width: 100%;
+                height: auto;
+                border-radius: 8px;
+                cursor: pointer;
+                border: 2px solid transparent;
+                transition: border 0.3s;
+            }
+            .classifier-item img:hover {
+                border: 2px solid #0077cc;
+            }
+            .output {
+                margin-top: 0.5rem;
+                font-weight: bold;
+                min-height: 1.5em;
+            }
+            canvas#hiddenCanvas {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>ml5.js Image Classifier Demo</h2>
+        <p>Click on an image to classify it using the MobileNet model.</p>
+
+        <div class="classifier-grid">
+            <div class="classifier-item">
+                <img src="https://u9k9000.github.io/IS2100_images/dog.png" alt="Dog" onclick="classify(this, 'result-dog')" />
+                <div id="result-dog" class="output"></div>
+            </div>
+            <div class="classifier-item">
+                <img src="https://u9k9000.github.io/IS2100_images/cat.png" alt="Cat" onclick="classify(this, 'result-cat')" />
+                <div id="result-cat" class="output"></div>
+            </div>
+        </div>
+
+        <canvas id="hiddenCanvas" width="224" height="224"></canvas>
+
+        <script>
+            let classifier = null;
+            let modelLoading = false;
+
+            function classify(image, outputId) {
+                const resultEl = document.getElementById(outputId);
+
+                if (!classifier && !modelLoading) {
+                    modelLoading = true;
+                    resultEl.innerText = 'Loading model...';
+
+                    ml5.imageClassifier('MobileNet', function(loadedClassifier) {
+                        classifier = loadedClassifier;
+                        modelLoading = false;
+                        classify(image, outputId);
+                    });
+                    return;
+                }
+
+                if (!classifier) {
+                    resultEl.innerText = 'Still loading...';
+                    return;
+                }
+
+                resultEl.innerText = 'Classifying...';
+
+                const canvas = document.getElementById('hiddenCanvas');
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+                classifier.classify(canvas, function (err, results) {
+                    if (err) {
+                        console.error("Classification error:", err);
+                        resultEl.innerText = 'Error classifying image.';
+                        return;
+                    }
+                    if (!results || !results[0]) {
+                        resultEl.innerText = 'No results returned.';
+                        return;
+                    }
+                    resultEl.innerText = 'Prediction: ' + results[0].label + ' (' + (results[0].confidence * 100).toFixed(2) + '%)';
+                });
+            }
+        </script>
+    </body>
+</html>
