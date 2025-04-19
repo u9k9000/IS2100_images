@@ -44,6 +44,21 @@
             canvas#hiddenCanvas {
                 display: none;
             }
+            .back-button {
+                margin-top: 3rem;
+                display: inline-block;
+                padding: 0.6rem 1.2rem;
+                font-weight: 600;
+                border: none;
+                background-color: #0077cc;
+                color: white;
+                border-radius: 6px;
+                cursor: pointer;
+                transition: background-color 0.3s;
+            }
+            .back-button:hover {
+                background-color: #005fa3;
+            }
         </style>
     </head>
     <body>
@@ -60,6 +75,8 @@
                 <div id="result-cat" class="output"></div>
             </div>
         </div>
+
+        <button class="back-button" onclick="history.back()">⬅ Back</button>
 
         <canvas id="hiddenCanvas" width="224" height="224"></canvas>
 
@@ -94,18 +111,18 @@
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-                classifier.classify(canvas, function (err, results) {
-                    if (err) {
-                        console.error("Classification error:", err);
+                classifier.classify(canvas)
+                    .then(function(results) {
+                        if (!results || !results[0]) {
+                            resultEl.innerText = 'No results returned.';
+                            return;
+                        }
+                        resultEl.innerText = 'Prediction: ' + results[0].label + ' (' + (results[0].confidence * 100).toFixed(2) + '%)';
+                    })
+                    .catch(function(error) {
+                        console.error("Classification error:", error);
                         resultEl.innerText = 'Error classifying image.';
-                        return;
-                    }
-                    if (!results || !results[0]) {
-                        resultEl.innerText = 'No results returned.';
-                        return;
-                    }
-                    resultEl.innerText = 'Prediction: ' + results[0].label + ' (' + (results[0].confidence * 100).toFixed(2) + '%)';
-                });
+                    });
             }
         </script>
     </body>
