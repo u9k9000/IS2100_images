@@ -1,129 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>ml5.js Classifier Demo</title>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-        <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
-        <style>
-            body {
-                font-family: 'Inter', sans-serif;
-                margin: 2rem;
-                text-align: center;
-            }
-            .classifier-grid {
-                display: flex;
-                gap: 2rem;
-                margin-top: 2rem;
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-            .classifier-item {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                max-width: 200px;
-            }
-            .classifier-item img {
-                width: 100%;
-                height: auto;
-                border-radius: 8px;
-                cursor: pointer;
-                border: 2px solid transparent;
-                transition: border 0.3s;
-            }
-            .classifier-item img:hover {
-                border: 2px solid #0077cc;
-            }
-            .output {
-                margin-top: 0.5rem;
-                font-weight: bold;
-                min-height: 1.5em;
-            }
-            canvas#hiddenCanvas {
-                display: none;
-            }
-            .back-button {
-                margin-top: 3rem;
-                display: inline-block;
-                padding: 0.6rem 1.2rem;
-                font-weight: 600;
-                border: none;
-                background-color: #0077cc;
-                color: white;
-                border-radius: 6px;
-                cursor: pointer;
-                transition: background-color 0.3s;
-            }
-            .back-button:hover {
-                background-color: #005fa3;
-            }
-        </style>
-    </head>
-    <body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ml5.js Classifier Demo</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- inline styles for this demo -->
+    <style>
+      .classifier-demo {
+        padding: 2rem;
+        text-align: center;
+      }
+      /* note callout */
+      .note {
+        text-align: left;
+        max-width: 600px;
+        margin: 1.5rem auto;
+        padding: 1rem;
+        border-left: 4px solid #f39c12;
+        background-color: #fff7e6;
+        color: #333;
+      }
+      .classifier-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        justify-items: center;
+        margin: 2rem 0;
+      }
+      .classifier-item img {
+        width: 200px;
+        height: 200px;
+        object-fit: cover;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: transform 0.2s, border-color 0.2s;
+      }
+      .classifier-item img:hover {
+        transform: scale(1.05);
+        border-color: #aaa;
+      }
+      .output {
+        margin-top: 0.5rem;
+        font-weight: 600;
+        color: #333;
+      }
+      .back-button {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        background-color: #4caf50;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .back-button:hover {
+        background-color: #45a049;
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <nav class="navbar">
+        <div class="logo">🤖 ML in the Browser</div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="content classifier-demo">
         <h2>ml5.js Image Classifier Demo</h2>
         <p>Click on an image to classify it using the MobileNet model.</p>
 
+        <p class="note">
+          <strong>Note:</strong> This part of the project is hosted externally on my
+          GitHub account due to WebGL security restrictions when running it locally
+          (insecure origin).
+        </p>
+
         <div class="classifier-grid">
-            <div class="classifier-item">
-                <img src="https://u9k9000.github.io/IS2100_images/dog.png" alt="Dog" onclick="classify(this, 'result-dog')" />
-                <div id="result-dog" class="output"></div>
-            </div>
-            <div class="classifier-item">
-                <img src="https://u9k9000.github.io/IS2100_images/cat.png" alt="Cat" onclick="classify(this, 'result-cat')" />
-                <div id="result-cat" class="output"></div>
-            </div>
+          <div class="classifier-item">
+            <img
+              src="https://u9k9000.github.io/IS2100_images/dog.png"
+              alt="Dog"
+              onclick="classify(this, 'result-dog')"
+            />
+            <div id="result-dog" class="output"></div>
+          </div>
+          <div class="classifier-item">
+            <img
+              src="https://u9k9000.github.io/IS2100_images/cat.png"
+              alt="Cat"
+              onclick="classify(this, 'result-cat')"
+            />
+            <div id="result-cat" class="output"></div>
+          </div>
         </div>
 
         <button class="back-button" onclick="history.back()">⬅ Back</button>
+        <canvas id="hiddenCanvas" width="224" height="224" class="hidden"></canvas>
+      </section>
+    </main>
 
-        <canvas id="hiddenCanvas" width="224" height="224"></canvas>
+    <footer>
+      <p>&copy; 2025 IS 2100 Final Project</p>
+    </footer>
 
-        <script>
-            let classifier = null;
-            let modelLoading = false;
+    <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
+    <script>
+      let classifier = null;
+      let modelLoading = false;
 
-            function classify(image, outputId) {
-                const resultEl = document.getElementById(outputId);
+      function classify(image, outputId) {
+        const resultEl = document.getElementById(outputId);
 
-                if (!classifier && !modelLoading) {
-                    modelLoading = true;
-                    resultEl.innerText = 'Loading model...';
+        if (!classifier && !modelLoading) {
+          modelLoading = true;
+          resultEl.innerText = "Loading model...";
 
-                    ml5.imageClassifier('MobileNet', function(loadedClassifier) {
-                        classifier = loadedClassifier;
-                        modelLoading = false;
-                        classify(image, outputId);
-                    });
-                    return;
-                }
+          ml5.imageClassifier("MobileNet", function (loadedClassifier) {
+            classifier = loadedClassifier;
+            modelLoading = false;
+            classify(image, outputId);
+          });
+          return;
+        }
 
-                if (!classifier) {
-                    resultEl.innerText = 'Still loading...';
-                    return;
-                }
+        if (!classifier) {
+          resultEl.innerText = "Still loading...";
+          return;
+        }
 
-                resultEl.innerText = 'Classifying...';
+        resultEl.innerText = "Classifying...";
 
-                const canvas = document.getElementById('hiddenCanvas');
-                const ctx = canvas.getContext('2d');
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const canvas = document.getElementById("hiddenCanvas");
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-                classifier.classify(canvas)
-                    .then(function(results) {
-                        if (!results || !results[0]) {
-                            resultEl.innerText = 'No results returned.';
-                            return;
-                        }
-                        resultEl.innerText = 'Prediction: ' + results[0].label + ' (' + (results[0].confidence * 100).toFixed(2) + '%)';
-                    })
-                    .catch(function(error) {
-                        console.error("Classification error:", error);
-                        resultEl.innerText = 'Error classifying image.';
-                    });
+        classifier
+          .classify(canvas)
+          .then(function (results) {
+            if (!results || !results[0]) {
+              resultEl.innerText = "No results returned.";
+              return;
             }
-        </script>
-    </body>
+            resultEl.innerText =
+              "Prediction: " +
+              results[0].label +
+              " (" +
+              (results[0].confidence * 100).toFixed(2) +
+              "%)";
+          })
+          .catch(function (error) {
+            console.error("Classification error:", error);
+            resultEl.innerText = "Error classifying image.";
+          });
+      }
+    </script>
+  </body>
 </html>
